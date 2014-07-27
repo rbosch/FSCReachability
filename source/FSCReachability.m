@@ -8,7 +8,7 @@
 
 #import "FSCReachability.h"
 
-
+// Notification messages
 NSString *FSCReachabilityChangedNotification = @"kNetworkReachabilityChangedNotification";
 NSString *FSCReachabilityOnlineNotification = @"kNetworkReachabilityOnlineNotification";
 NSString *FSCReachabilityOfflineNotification = @"kNetworkReachabilityOfflineNotification";
@@ -37,20 +37,21 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
 
 @implementation FSCReachability
 
-@synthesize flags = _flags;
+@synthesize flags = _flags; // holds reachability status
 
 - (id)initWithHostname:(NSString *)hostName
 {
     if (self = [super init]) {
 
         _reachabilityRef = SCNetworkReachabilityCreateWithName(NULL,[hostName UTF8String]);
+
         SCNetworkReachabilityContext context = {0, (__bridge void *)(self), NULL, NULL, NULL};
         
         if (SCNetworkReachabilitySetCallback(_reachabilityRef, ReachabilityCallback, &context))
         {
             if (SCNetworkReachabilityScheduleWithRunLoop(_reachabilityRef, CFRunLoopGetCurrent(), kCFRunLoopDefaultMode))
             {
-                NSLog(@"scheduled with runloop");
+                NSLog(@"SCNetworkReachability scheduled with runloop");
             }
         }
     }
@@ -60,15 +61,14 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
 
 - (void)checkNetworkStatus
 {
-    
     SCNetworkReachabilityGetFlags(_reachabilityRef, &_flags);
 }
 
-- (void)printNetworkStatus
+/* return network status string */
+- (NSString *)networkStatus
 {
-    
 #if TARGET_OS_IPHONE
-    NSLog(@"Reachability Flag Status: %c%c %c%c%c%c%c%c%c",
+   return [NSString stringWithFormat:@"%c%c %c%c%c%c%c%c%c"
           (flags & kSCNetworkReachabilityFlagsIsWWAN)		  		 ? 'W' : '-',     /* only available iOS */
           (_flags & kSCNetworkReachabilityFlagsReachable)            ? 'R' : '-',
           (_flags & kSCNetworkReachabilityFlagsTransientConnection)  ? 't' : '-',
@@ -78,10 +78,10 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
           (_flags & kSCNetworkReachabilityFlagsConnectionOnDemand)   ? 'D' : '-',
           (_flags & kSCNetworkReachabilityFlagsIsLocalAddress)       ? 'l' : '-',
           (_flags & kSCNetworkReachabilityFlagsIsDirect)             ? 'd' : '-'
-          );
-
+          ];
+    
 #else
-    NSLog(@"Reachability Flag Status: %c %c%c%c%c%c%c%c",
+    return [NSString stringWithFormat:@"%c %c%c%c%c%c%c%c",
           (_flags & kSCNetworkReachabilityFlagsReachable)            ? 'R' : '-',
           (_flags & kSCNetworkReachabilityFlagsTransientConnection)  ? 't' : '-',
           (_flags & kSCNetworkReachabilityFlagsConnectionRequired)   ? 'c' : '-',
@@ -90,9 +90,15 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
           (_flags & kSCNetworkReachabilityFlagsConnectionOnDemand)   ? 'D' : '-',
           (_flags & kSCNetworkReachabilityFlagsIsLocalAddress)       ? 'l' : '-',
           (_flags & kSCNetworkReachabilityFlagsIsDirect)             ? 'd' : '-'
-          );
+          ];
 #endif
+    
+}
 
+/* for debuging purpose */
+- (void)printNetworkStatus
+{
+    NSLog(@"Reachability Flag Status: %@", [self networkStatus]);
 }
 
 - (void)dealloc

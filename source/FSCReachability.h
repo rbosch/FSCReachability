@@ -23,6 +23,8 @@ extern NSString *FSCReachabilityOfflineNotification;
 
 - (id)initWithHostname:(NSString *)hostName;
 - (void)checkNetworkStatus;
+- (NSString *)networkStatus;
+
 - (void)printNetworkStatus;
 
 @end
